@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Binomische Formeln</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--gold:#FFD93D;--purple:#a29bfe;--green:#2ecc71;--red:#ff4444;--mid:#2c2c3e;--teal:#4ECDC4}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--mid);font-family:'Nunito',sans-serif;touch-action:none}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px}
+  .screen.hidden{display:none}
+
+  /* SETUP */
+  #setup{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)}
+  #setup h1{font-family:'Fredoka One',cursive;font-size:clamp(1.8rem,4vw,2.8rem);color:var(--gold);text-shadow:0 4px 20px rgba(255,217,61,.4)}
+
+  .setup-row{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:600px}
+  .setup-row span{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.4)}
+  .btn-group{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+  .sel-btn{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:10px 18px;font-family:'Fredoka One',cursive;font-size:.95rem;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;text-align:center}
+  .sel-btn.active{background:var(--gold);border-color:var(--gold);color:#1a1a2e;box-shadow:0 4px 14px rgba(255,217,61,.35)}
+
+  /* type btns */
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;max-width:600px}
+  .type-btn{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;font-family:'Fredoka One',cursive;font-size:.9rem;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.3}
+  .type-btn.active{background:var(--purple);border-color:var(--purple);color:#fff;box-shadow:0 4px 14px rgba(162,155,254,.35)}
+
+  .start-btn{background:var(--gold);color:#1a1a2e;border:none;border-radius:50px;padding:13px 44px;font-family:'Fredoka One',cursive;font-size:1.3rem;cursor:pointer;box-shadow:0 8px 28px rgba(255,217,61,.4);transition:transform .15s}
+  .start-btn:active{transform:scale(.96)}
+
+  /* GAME */
+  #game{background:linear-gradient(135deg,#1a1a2e,#0f3460);justify-content:space-between;padding:20px}
+  .game-header{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:700px}
+  .score-display{font-family:'Fredoka One',cursive;font-size:1.1rem;color:rgba(255,255,255,.5)}
+  .score-display span{color:var(--gold);font-size:1.4rem}
+  .progress-bar-wrap{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin:0 16px}
+  .progress-bar{height:100%;background:var(--purple);border-radius:4px;transition:width .4s}
+
+  .question-card{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);border-radius:24px;padding:20px 24px;width:100%;max-width:700px;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .q-tag{font-family:'Fredoka One',cursive;font-size:.85rem;color:var(--purple);text-transform:uppercase;letter-spacing:2px}
+  .q-text{font-family:'Fredoka One',cursive;font-size:clamp(1rem,2.2vw,1.4rem);color:rgba(255,255,255,.6);text-align:center}
+  .q-formula{font-family:'Fredoka One',cursive;font-size:clamp(1.4rem,3.2vw,2rem);color:#fff;text-align:center;background:rgba(255,255,255,.08);border-radius:14px;padding:14px 20px;width:100%;line-height:1.6}
+  sup{font-size:.65em;vertical-align:super}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:700px}
+  .choice-btn{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 10px;font-family:'Fredoka One',cursive;font-size:clamp(.85rem,1.8vw,1.15rem);color:#fff;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.7;display:flex;align-items:center;justify-content:center}
+  .choice-btn:active{transform:scale(.97)}
+  .choice-btn.correct{background:rgba(46,204,113,.25);border-color:var(--green);color:var(--green);animation:correctPop .4s ease}
+  .choice-btn.wrong{background:rgba(255,68,68,.2);border-color:var(--red);color:var(--red);animation:wrongShake .3s ease}
+  .choice-btn.reveal{background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.5);color:rgba(46,204,113,.9)}
+  .choice-btn:disabled{cursor:default}
+  @keyframes correctPop{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+  @keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+  .feedback{font-family:'Fredoka One',cursive;font-size:1.1rem;min-height:26px;text-align:center}
+  .feedback.ok{color:var(--green)}.feedback.nok{color:var(--red)}
+
+  /* RESULT */
+  #result{background:linear-gradient(135deg,#1a1a2e,#0f3460)}
+  #result h2{font-family:'Fredoka One',cursive;font-size:clamp(2rem,5vw,3rem);color:var(--gold)}
+  .result-score{font-family:'Fredoka One',cursive;font-size:5rem;color:#fff;line-height:1}
+  .result-sub{font-size:1rem;color:rgba(255,255,255,.4);font-family:'Fredoka One',cursive}
+  .result-btn{background:var(--gold);color:#1a1a2e;border:none;border-radius:50px;padding:13px 44px;font-family:'Fredoka One',cursive;font-size:1.3rem;cursor:pointer;box-shadow:0 8px 24px rgba(255,217,61,.4)}
+  .confetti-piece{position:fixed;border-radius:2px;animation:confettiFall linear forwards;z-index:999;pointer-events:none}
+  @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup" class="screen">
+  <h1>📐 Binomische Formeln</h1>
+
+  <div class="setup-row">
+    <span>🎯 Anzahl Aufgaben</span>
+    <div class="btn-group" id="countBtns">
+      <button class="sel-btn" data-c="10">10</button>
+      <button class="sel-btn active" data-c="20">20</button>
+      <button class="sel-btn" data-c="30">30</button>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">Los geht's! 🚀</button>
+  <button style="background:none;border:none;color:rgba(255,255,255,.3);font-family:'Fredoka One',cursive;font-size:.9rem;cursor:pointer" onclick="goBack()">← Zurück</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen hidden">
+  <div class="game-header">
+    <div class="score-display">✓ <span id="scoreVal">0</span></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="score-display" id="qCounter">1 / 20</div>
+  </div>
+  <div class="question-card">
+    <div class="q-tag" id="qTag">Formel erkennen</div>
+    <div class="q-text" id="qText"></div>
+    <div class="q-formula" id="qFormula"></div>
+  </div>
+  <div class="choices" id="choices"></div>
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="screen hidden">
+  <div style="font-size:3rem">🏆</div>
+  <h2>Ergebnis</h2>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-sub" id="finalSub">von 20 richtig</div>
+  <button class="result-btn" onclick="restartGame()">Nochmal 🔄</button>
+  <button style="background:none;border:none;color:rgba(255,255,255,.3);font-family:'Fredoka One',cursive;font-size:.9rem;cursor:pointer;margin-top:8px" onclick="goBack()">← Zurück</button>
+</div>
+
+<script>
+// ── HELPERS ──
+function sup(s){ return s.replace(/\^2/g,'<sup>2</sup>'); }
+
+// ── THE 3 FORMULAS ──
+const BINOM = [
+  {
+    id:1,
+    name:'1. Binomische Formel',
+    pattern:'(a + b)^2',
+    expanded:'a^2 + 2ab + b^2',
+    patternHtml:'(a + b)<sup>2</sup>',
+    expandedHtml:'a<sup>2</sup> + 2ab + b<sup>2</sup>',
+  },
+  {
+    id:2,
+    name:'2. Binomische Formel',
+    pattern:'(a - b)^2',
+    expanded:'a^2 - 2ab + b^2',
+    patternHtml:'(a − b)<sup>2</sup>',
+    expandedHtml:'a<sup>2</sup> − 2ab + b<sup>2</sup>',
+  },
+  {
+    id:3,
+    name:'3. Binomische Formel',
+    pattern:'(a + b)(a - b)',
+    expanded:'a^2 - b^2',
+    patternHtml:'(a + b)(a − b)',
+    expandedHtml:'a<sup>2</sup> − b<sup>2</sup>',
+  },
+];
+
+// ── QUESTION GENERATORS ──
+
+// Typ 1: Zeige Muster → welcher Name / welche Formel?
+function makeType1(){
+  const b = BINOM[~~(Math.random()*3)];
+  const usePattern = Math.random()<.5;
+  const shown = usePattern ? b.patternHtml : b.expandedHtml;
+  const question = usePattern
+    ? 'Welche binomische Formel ist das?'
+    : 'Zu welcher Formel gehört dieser Ausdruck?';
+  const ans = b.name;
+  const wrongs = BINOM.filter(x=>x.id!==b.id).map(x=>x.name);
+  const choices = [ans,...wrongs].sort(()=>Math.random()-.5);
+  return {
+    tag:'1️⃣ Formel erkennen',
+    text: question,
+    formula: shown,
+    choices: choices.map(c=>({html:c, correct:c===ans}))
+  };
+}
+
+// Typ 2: Zeige Muster mit Variablen → ausmultiplizierten Ausdruck wählen
+function makeType2(){
+  const b = BINOM[~~(Math.random()*3)];
+  // use letters a,b or x,y or m,n
+  const pairs=[['a','b'],['x','y'],['m','n'],['p','q']];
+  const [v1,v2]=pairs[~~(Math.random()*pairs.length)];
+  const pat = b.patternHtml.replace(/a/g,v1).replace(/b/g,v2);
+  const exp = b.expandedHtml.replace(/a/g,v1).replace(/b/g,v2);
+  // wrong answers from other formulas with same vars
+  const wrongs = BINOM.filter(x=>x.id!==b.id)
+    .map(x=>x.expandedHtml.replace(/a/g,v1).replace(/b/g,v2));
+  const choices=[exp,...wrongs].sort(()=>Math.random()-.5);
+  return {
+    tag:'2️⃣ Ausmultiplizieren',
+    text:'Multipliziere aus:',
+    formula: pat,
+    choices: choices.map(c=>({html:c, correct:c===exp}))
+  };
+}
+
+// Typ 3: Zeige ausgemultiplizierten Ausdruck → welches Muster?
+function makeType3(){
+  const b = BINOM[~~(Math.random()*3)];
+  const pairs=[['a','b'],['x','y'],['m','n'],['p','q']];
+  const [v1,v2]=pairs[~~(Math.random()*pairs.length)];
+  const exp = b.expandedHtml.replace(/a/g,v1).replace(/b/g,v2);
+  const pat = b.patternHtml.replace(/a/g,v1).replace(/b/g,v2);
+  const wrongs = BINOM.filter(x=>x.id!==b.id)
+    .map(x=>x.patternHtml.replace(/a/g,v1).replace(/b/g,v2));
+  const choices=[pat,...wrongs].sort(()=>Math.random()-.5);
+  return {
+    tag:'3️⃣ Rückwärts',
+    text:'Schreibe als binomische Formel:',
+    formula: exp,
+    choices: choices.map(c=>({html:c, correct:c===pat}))
+  };
+}
+
+// ── STATE ──
+let activeTypes=new Set([1,2,3]);
+const GENERATORS={1:makeType1,2:makeType2,3:makeType3};
+let totalQ=20, queue=[], qIdx=0, score=0;
+
+// ── SETUP ──
+document.getElementById('countBtns').onclick=e=>{
+  const btn=e.target.closest('[data-c]'); if(!btn) return;
+  document.querySelectorAll('#countBtns .sel-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); totalQ=parseInt(btn.dataset.c);
+};
+
+
+function startGame(){
+  queue=Array.from({length:totalQ},()=>{
+    const t=[1,2,3][~~(Math.random()*3)];
+    return GENERATORS[t]();
+  });
+  qIdx=0; score=0;
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion(){
+  if(qIdx>=totalQ){showResult();return;}
+  const q=queue[qIdx];
+  document.getElementById('qTag').textContent=q.tag;
+  document.getElementById('qText').textContent=q.text;
+  document.getElementById('qFormula').innerHTML=q.formula;
+  document.getElementById('feedback').textContent='';
+  document.getElementById('qCounter').textContent=(qIdx+1)+' / '+totalQ;
+  document.getElementById('progressBar').style.width=((qIdx/totalQ)*100)+'%';
+
+  const div=document.getElementById('choices'); div.innerHTML='';
+  q.choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.innerHTML=c.html;
+    btn.addEventListener('click',()=>pick(btn,c.correct));
+    div.appendChild(btn);
+  });
+}
+
+function pick(btn,isCorrect){
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('feedback');
+  if(isCorrect){
+    btn.classList.add('correct'); score++;
+    document.getElementById('scoreVal').textContent=score;
+    fb.textContent='✓ Richtig!'; fb.className='feedback ok';
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent='✗ Falsch!'; fb.className='feedback nok';
+    document.querySelectorAll('.choice-btn').forEach(b=>{
+      if(queue[qIdx].choices[Array.from(document.querySelectorAll('.choice-btn')).indexOf(b)]?.correct)
+        b.classList.add('reveal');
+    });
+  }
+  setTimeout(()=>{qIdx++;showQuestion();},1300);
+}
+
+function showResult(){
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('finalSub').textContent='von '+totalQ+' richtig';
+  spawnConfetti();
+}
+function restartGame(){
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+}
+function goBack(){ window.location.href="index.html"; }
+function spawnConfetti(){
+  const c=['#FF6B6B','#4ECDC4','#FFD93D','#a29bfe','#fd79a8','#00b894'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div'); el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;background:${c[~~(Math.random()*c.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.8}s;width:${8+Math.random()*8}px;height:${10+Math.random()*10}px;`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),4000);
+  }
+}
+</script>
+</body>
+</html>
