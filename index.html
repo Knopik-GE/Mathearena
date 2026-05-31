@@ -588,6 +588,10 @@ function doLaunch(){
 }
 
 // ── INIT ──
+// Show home screen explicitly on first load
+if(!window.location.search){
+  showScreen('home');
+}
 updateStreakBadge();
 // Unregister old service workers
 if('serviceWorker' in navigator){
